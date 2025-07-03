@@ -177,7 +177,8 @@ export default function Chat() {
         },
         mode: 'no-cors',
         body: JSON.stringify({
-          message: messageContent
+          message: messageContent,
+          timestamp: new Date().toISOString()
         }),
       });
     } catch (error) {
