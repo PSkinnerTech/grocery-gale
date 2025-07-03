@@ -9,7 +9,99 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      dietary_preferences: {
+        Row: {
+          adults_count: number | null
+          allergies: string | null
+          children_count: number | null
+          created_at: string
+          dietary_preference: string | null
+          id: string
+          meals_per_day: number | null
+          onboarding_completed: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adults_count?: number | null
+          allergies?: string | null
+          children_count?: number | null
+          created_at?: string
+          dietary_preference?: string | null
+          id?: string
+          meals_per_day?: number | null
+          onboarding_completed?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adults_count?: number | null
+          allergies?: string | null
+          children_count?: number | null
+          created_at?: string
+          dietary_preference?: string | null
+          id?: string
+          meals_per_day?: number | null
+          onboarding_completed?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meal_plans: {
+        Row: {
+          created_at: string
+          id: string
+          plan_data: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_data?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_data?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          week_start_date?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
