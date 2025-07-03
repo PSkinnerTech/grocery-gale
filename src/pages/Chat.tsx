@@ -135,8 +135,31 @@ export default function Chat() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageContent = inputMessage;
     setInputMessage('');
     setLoading(true);
+
+    // Trigger webhook with user message
+    try {
+      const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/1a7e2ba7-25e7-4746-b924-c39e89a7bc36';
+      
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'no-cors',
+        body: JSON.stringify({
+          user_id: user?.id,
+          message: messageContent,
+          timestamp: new Date().toISOString(),
+          triggered_from: 'user_message',
+          event: 'message_sent'
+        }),
+      });
+    } catch (error) {
+      console.error('Error triggering webhook:', error);
+    }
 
     // Simulate AI response (in real implementation, this would call your AI service)
     setTimeout(() => {
