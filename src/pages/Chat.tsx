@@ -91,7 +91,7 @@ export default function Chat() {
 
   const triggerWebhook = async () => {
     try {
-      const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook/gale';
+      const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/gale';
       
       await fetch(webhookUrl, {
         method: 'POST',
@@ -166,7 +166,7 @@ export default function Chat() {
 
     // Send message to n8n webhook and get response
     try {
-      const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook/gale';
+      const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/gale';
       
       const formData = new FormData();
       formData.append('message', messageContent);
