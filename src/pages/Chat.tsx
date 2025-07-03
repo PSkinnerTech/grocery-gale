@@ -177,11 +177,7 @@ export default function Chat() {
         },
         mode: 'no-cors',
         body: JSON.stringify({
-          user_id: user?.id,
-          message: messageContent,
-          timestamp: new Date().toISOString(),
-          triggered_from: 'user_message',
-          event: 'message_sent'
+          message: messageContent
         }),
       });
     } catch (error) {
