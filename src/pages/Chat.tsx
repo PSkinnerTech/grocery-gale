@@ -164,7 +164,7 @@ export default function Chat() {
     setInputMessage('');
     setLoading(true);
 
-    // Trigger webhook with user message
+    // Send message to n8n webhook and get response
     try {
       const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/1a7e2ba7-25e7-4746-b924-c39e89a7bc36';
       
@@ -172,30 +172,40 @@ export default function Chat() {
       formData.append('message', messageContent);
       formData.append('timestamp', new Date().toISOString());
       
-      await fetch(webhookUrl, {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'X-User-First-Name': userProfile?.first_name || '',
           'X-User-Last-Name': userProfile?.last_name || '',
         },
-        mode: 'no-cors',
         body: formData,
       });
-    } catch (error) {
-      console.error('Error triggering webhook:', error);
-    }
 
-    // Simulate AI response (in real implementation, this would call your AI service)
-    setTimeout(() => {
+      if (response.ok) {
+        const responseText = await response.text();
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: responseText || "I'm here to help you plan your meals and create grocery lists! What would you like to work on today?",
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        throw new Error(`Webhook responded with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error with webhook:', error);
+      // Fallback message if webhook fails
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm here to help you plan your meals and create grocery lists! What would you like to work on today?",
+        content: "Sorry, I'm having trouble connecting right now. Please try again.",
         sender: 'assistant',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, assistantMessage]);
-      setLoading(false);
-    }, 1000);
+    }
+
+    setLoading(false);
   };
 
   const handleSignOut = async () => {
