@@ -107,28 +107,55 @@ export type Database = {
       }
       meals: {
         Row: {
+          calories: number | null
           created_at: string
           description: string | null
           id: string
-          meal_name: string
+          ingredients: Json | null
+          meal_type: string | null
+          name: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          calories?: number | null
           created_at?: string
           description?: string | null
           id?: string
-          meal_name: string
+          ingredients?: Json | null
+          meal_type?: string | null
+          name: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          calories?: number | null
           created_at?: string
           description?: string | null
           id?: string
-          meal_name?: string
+          ingredients?: Json | null
+          meal_type?: string | null
+          name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      n8n_chat_histories: {
+        Row: {
+          id: number
+          message: Json
+          session_id: string
+        }
+        Insert: {
+          id?: number
+          message: Json
+          session_id: string
+        }
+        Update: {
+          id?: number
+          message?: Json
+          session_id?: string
         }
         Relationships: []
       }
