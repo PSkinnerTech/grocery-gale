@@ -287,6 +287,7 @@ export default function Chat() {
       formData.append('user_id', user?.id || '');
       formData.append('first_name', userProfile?.first_name || '');
       formData.append('last_name', userProfile?.last_name || '');
+      formData.append('email', userProfile?.email || user?.email || '');
       formData.append('dietary_preference', (dietaryData as any)?.dietary_preference || '');
       formData.append('allergies', (dietaryData as any)?.allergies || '');
       formData.append('meals_per_day', (dietaryData as any)?.meals_per_day?.toString() || '');

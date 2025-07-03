@@ -16,6 +16,7 @@ serve(async (req) => {
     const userId = formData.get('user_id') as string
     const firstName = formData.get('first_name') as string
     const lastName = formData.get('last_name') as string
+    const email = formData.get('email') as string
     const dietaryPreference = formData.get('dietary_preference') as string
     const allergies = formData.get('allergies') as string
     const mealsPerDay = formData.get('meals_per_day') as string
@@ -28,6 +29,7 @@ serve(async (req) => {
       userId,
       firstName,
       lastName,
+      email,
       message: message?.substring(0, 100) + '...',
       dietaryPreference,
       allergies,
@@ -45,6 +47,7 @@ serve(async (req) => {
     webhookFormData.append('user_id', userId || '')
     webhookFormData.append('first_name', firstName || '')
     webhookFormData.append('last_name', lastName || '')
+    webhookFormData.append('email', email || '')
     webhookFormData.append('dietary_preference', dietaryPreference || '')
     webhookFormData.append('allergies', allergies || '')
     webhookFormData.append('meals_per_day', mealsPerDay || '')
