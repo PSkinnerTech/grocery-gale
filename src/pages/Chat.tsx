@@ -25,6 +25,12 @@ interface MealPlan {
   created_at: string;
 }
 
+interface UserProfile {
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+}
+
 export default function Chat() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
@@ -33,6 +39,7 @@ export default function Chat() {
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasTriggeredWebhook = useRef(false);
 
@@ -64,8 +71,9 @@ export default function Chat() {
           return;
         }
 
-        // Load meal plans
+        // Load meal plans and user profile
         loadMealPlans();
+        loadUserProfile();
 
         // Trigger webhook only once per session
         if (!hasTriggeredWebhook.current) {
@@ -123,6 +131,23 @@ export default function Chat() {
     }
   };
 
+  const loadUserProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setUserProfile(data || null);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || loading) return;
@@ -147,6 +172,8 @@ export default function Chat() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-User-First-Name': userProfile?.first_name || '',
+          'X-User-Last-Name': userProfile?.last_name || '',
         },
         mode: 'no-cors',
         body: JSON.stringify({
