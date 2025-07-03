@@ -299,51 +299,19 @@ export default function Chat() {
         throw new Error(`Server responded with status: ${response.status}`);
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body reader available');
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      const decoder = new TextDecoder();
-      let accumulatedContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              if (data.type === 'delta' && data.content) {
-                accumulatedContent += data.content;
-                setMessages(prev => prev.map(msg => 
-                  msg.id === assistantMessageId 
-                    ? { ...msg, content: accumulatedContent }
-                    : msg
-                ));
-              } else if (data.type === 'complete') {
-                break;
-              } else if (data.type === 'error') {
-                accumulatedContent = data.content;
-                setMessages(prev => prev.map(msg => 
-                  msg.id === assistantMessageId 
-                    ? { ...msg, content: accumulatedContent }
-                    : msg
-                ));
-                break;
-              }
-            } catch (error) {
-              console.error('Error parsing SSE data:', error);
-            }
-          }
-        }
-      }
+      const assistantContent = result.message || "I'm here to help you plan your meals and create grocery lists! What would you like to work on today?";
+      
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantMessageId 
+          ? { ...msg, content: assistantContent }
+          : msg
+      ));
 
       // Auto-save conversation after response
       setTimeout(() => {
