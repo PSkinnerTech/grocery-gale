@@ -362,20 +362,50 @@ export default function Chat() {
 
         {/* Input */}
         <div className="border-t bg-card p-4">
-          <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto">
-            <div className="flex space-x-2">
-              <Input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Ask me about meal planning, recipes, or grocery lists..."
-                className="flex-1"
-                disabled={loading}
-              />
-              <Button type="submit" disabled={loading || !inputMessage.trim()}>
-                <Send className="h-4 w-4" />
+          <div className="max-w-2xl mx-auto space-y-3">
+            {/* Recommended prompts */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setInputMessage("Let's create this week's meal plan")}
+                className="text-xs"
+              >
+                Let's create this week's meal plan
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setInputMessage("What was on last week's grocery list?")}
+                className="text-xs"
+              >
+                What was on last week's grocery list?
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setInputMessage("I'd like to add some meals to my regular meals list")}
+                className="text-xs"
+              >
+                I'd like to add some meals to my regular meals list
               </Button>
             </div>
-          </form>
+            
+            <form onSubmit={handleSendMessage}>
+              <div className="flex space-x-2">
+                <Input
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Ask me about meal planning, recipes, or grocery lists..."
+                  className="flex-1"
+                  disabled={loading}
+                />
+                <Button type="submit" disabled={loading || !inputMessage.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
