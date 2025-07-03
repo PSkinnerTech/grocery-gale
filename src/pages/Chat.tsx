@@ -168,18 +168,18 @@ export default function Chat() {
     try {
       const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/1a7e2ba7-25e7-4746-b924-c39e89a7bc36';
       
+      const formData = new FormData();
+      formData.append('message', messageContent);
+      formData.append('timestamp', new Date().toISOString());
+      
       await fetch(webhookUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-User-First-Name': userProfile?.first_name || '',
           'X-User-Last-Name': userProfile?.last_name || '',
         },
         mode: 'no-cors',
-        body: JSON.stringify({
-          message: messageContent,
-          timestamp: new Date().toISOString()
-        }),
+        body: formData,
       });
     } catch (error) {
       console.error('Error triggering webhook:', error);
