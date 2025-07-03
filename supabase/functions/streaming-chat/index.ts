@@ -40,12 +40,32 @@ serve(async (req) => {
         // Send initial connection message
         controller.enqueue(`data: ${JSON.stringify({ type: 'connected' })}\n\n`)
         
-        // Forward to the original webhook for now (in a real implementation, you'd call OpenAI API directly)
+        // Forward to the original webhook
+        const forwardFormData = new FormData()
+        forwardFormData.append('message', message || '')
+        forwardFormData.append('timestamp', new Date().toISOString())
+        forwardFormData.append('user_id', userId || '')
+        forwardFormData.append('first_name', firstName || '')
+        forwardFormData.append('last_name', lastName || '')
+        forwardFormData.append('dietary_preference', dietaryPreference || '')
+        forwardFormData.append('allergies', allergies || '')
+        forwardFormData.append('meals_per_day', mealsPerDay || '')
+        forwardFormData.append('adults_count', adultsCount || '')
+        forwardFormData.append('children_count', childrenCount || '')
+        
+        console.log('Forwarding to webhook...')
+        
         fetch('https://pskinnertech.app.n8n.cloud/webhook-test/gale', {
           method: 'POST',
-          body: formData,
+          body: forwardFormData,
         })
-        .then(response => response.text())
+        .then(response => {
+          console.log('Webhook response status:', response.status)
+          if (!response.ok) {
+            throw new Error(`Webhook responded with status: ${response.status}`)
+          }
+          return response.text()
+        })
         .then(responseText => {
           console.log('Received response from webhook:', responseText.substring(0, 200) + '...')
           
@@ -61,9 +81,12 @@ serve(async (req) => {
             } else {
               messageContent = responseText
             }
-          } catch (error) {
+          } catch (parseError) {
+            console.log('Failed to parse JSON, using raw response:', parseError)
             messageContent = responseText
           }
+
+          console.log('Final message content:', messageContent.substring(0, 100) + '...')
 
           // Stream the response word by word
           const words = messageContent.split(' ')
@@ -78,7 +101,7 @@ serve(async (req) => {
                 isComplete: false 
               })}\n\n`)
               wordIndex++
-              setTimeout(sendNextWord, 50) // 50ms delay between words
+              setTimeout(sendNextWord, 30) // Faster streaming - 30ms delay
             } else {
               // Send completion signal
               controller.enqueue(`data: ${JSON.stringify({ 
@@ -115,7 +138,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in streaming chat:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
