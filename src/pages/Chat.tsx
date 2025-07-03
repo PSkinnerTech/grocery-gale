@@ -9,13 +9,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Menu, User, Send } from 'lucide-react';
+import { Menu, User, Send, RotateCcw, History } from 'lucide-react';
 
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'assistant';
-  timestamp: Date;
+  timestamp: string; // Changed to string for JSON compatibility
 }
 
 interface MealPlan {
@@ -31,6 +31,13 @@ interface UserProfile {
   email: string | null;
 }
 
+interface ChatConversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  created_at: string;
+}
+
 export default function Chat() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
@@ -40,6 +47,8 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasTriggeredWebhook = useRef(false);
 
@@ -71,9 +80,10 @@ export default function Chat() {
           return;
         }
 
-        // Load meal plans and user profile
+        // Load meal plans, user profile, and chat conversations
         loadMealPlans();
         loadUserProfile();
+        loadChatConversations();
 
         // Trigger webhook only once per session
         if (!hasTriggeredWebhook.current) {
@@ -148,6 +158,83 @@ export default function Chat() {
     }
   };
 
+  const loadChatConversations = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .select('id, title, messages, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setChatConversations((data || []).map(conv => ({
+        ...conv,
+        messages: conv.messages as unknown as Message[]
+      })));
+    } catch (error) {
+      console.error('Error loading chat conversations:', error);
+    }
+  };
+
+  const saveCurrentConversation = async () => {
+    if (!user || messages.length === 0) return;
+
+    try {
+      const title = messages.find(m => m.sender === 'user')?.content.slice(0, 50) + '...' || 'New Conversation';
+      
+      if (currentConversationId) {
+        // Update existing conversation
+        const { error } = await supabase
+          .from('chat_conversations')
+          .update({
+            messages: messages as any,
+            title: title
+          })
+          .eq('id', currentConversationId);
+
+        if (error) throw error;
+      } else {
+        // Create new conversation
+        const { data, error } = await supabase
+          .from('chat_conversations')
+          .insert({
+            user_id: user.id,
+            title: title,
+            messages: messages as any
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setCurrentConversationId(data.id);
+      }
+      
+      loadChatConversations();
+    } catch (error) {
+      console.error('Error saving conversation:', error);
+    }
+  };
+
+  const loadConversation = (conversation: ChatConversation) => {
+    setMessages(conversation.messages);
+    setCurrentConversationId(conversation.id);
+  };
+
+  const restartChat = async () => {
+    if (messages.length > 0) {
+      await saveCurrentConversation();
+    }
+    setMessages([]);
+    setCurrentConversationId(null);
+    toast({
+      title: "Chat restarted",
+      description: "Previous conversation has been saved to history."
+    });
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || loading) return;
@@ -156,7 +243,7 @@ export default function Chat() {
       id: Date.now().toString(),
       content: inputMessage,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date().toISOString()
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -204,9 +291,14 @@ export default function Chat() {
           id: (Date.now() + 1).toString(),
           content: messageContent,
           sender: 'assistant',
-          timestamp: new Date()
+          timestamp: new Date().toISOString()
         };
         setMessages(prev => [...prev, assistantMessage]);
+        
+        // Auto-save conversation after response
+        setTimeout(() => {
+          saveCurrentConversation();
+        }, 1000);
       } else {
         throw new Error(`Webhook responded with status: ${response.status}`);
       }
@@ -217,7 +309,7 @@ export default function Chat() {
         id: (Date.now() + 1).toString(),
         content: "Sorry, I'm having trouble connecting right now. Please try again.",
         sender: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, assistantMessage]);
     }
@@ -277,42 +369,88 @@ export default function Chat() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <header className="border-b bg-card p-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={restartChat}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Restart Chat
+            </Button>
+          </div>
           <div className="flex-1 text-center">
             <h1 className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
               Gale
             </h1>
           </div>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <div className="flex flex-col h-full">
-                <div className="pb-4 border-b">
-                  <h2 className="text-lg font-semibold">Profile</h2>
+          <div className="flex items-center gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <History className="h-4 w-4 mr-2" />
+                  Chat History
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <div className="flex flex-col h-full">
+                  <div className="pb-4 border-b">
+                    <h2 className="text-lg font-semibold">Chat History</h2>
+                  </div>
+                  <ScrollArea className="flex-1 py-4">
+                    {chatConversations.length > 0 ? (
+                      <div className="space-y-2">
+                        {chatConversations.map((conversation) => (
+                          <Card 
+                            key={conversation.id} 
+                            className="p-3 cursor-pointer hover:bg-accent transition-colors"
+                            onClick={() => loadConversation(conversation)}
+                          >
+                            <div className="font-medium text-sm">{conversation.title}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {new Date(conversation.created_at).toLocaleDateString()}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-muted-foreground py-8">
+                        <p>No chat history yet</p>
+                        <p className="text-sm mt-1">Start a conversation to see it here!</p>
+                      </div>
+                    )}
+                  </ScrollArea>
                 </div>
-                <div className="flex-1 py-4">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{user.email}</p>
+              </SheetContent>
+            </Sheet>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <div className="flex flex-col h-full">
+                  <div className="pb-4 border-b">
+                    <h2 className="text-lg font-semibold">Profile</h2>
+                  </div>
+                  <div className="flex-1 py-4">
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="font-medium">{user.email}</p>
+                      </div>
                     </div>
                   </div>
+                  <div className="pt-4 border-t">
+                    <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                      Sign Out
+                    </Button>
+                  </div>
                 </div>
-                <div className="pt-4 border-t">
-                  <Button variant="outline" className="w-full" onClick={handleSignOut}>
-                    Sign Out
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
 
         {/* Messages */}
@@ -340,7 +478,7 @@ export default function Chat() {
                 >
                   <p className="text-sm">{message.content}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </Card>
               </div>
