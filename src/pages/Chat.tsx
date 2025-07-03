@@ -183,9 +183,26 @@ export default function Chat() {
 
       if (response.ok) {
         const responseText = await response.text();
+        let messageContent = "I'm here to help you plan your meals and create grocery lists! What would you like to work on today?";
+        
+        try {
+          // Parse the JSON response and extract the output value
+          const parsedResponse = JSON.parse(responseText);
+          if (Array.isArray(parsedResponse) && parsedResponse[0]?.output) {
+            messageContent = parsedResponse[0].output;
+          } else if (parsedResponse?.output) {
+            messageContent = parsedResponse.output;
+          } else {
+            messageContent = responseText;
+          }
+        } catch (error) {
+          // If parsing fails, use the raw response
+          messageContent = responseText;
+        }
+
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: responseText || "I'm here to help you plan your meals and create grocery lists! What would you like to work on today?",
+          content: messageContent,
           sender: 'assistant',
           timestamp: new Date()
         };
