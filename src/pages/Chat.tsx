@@ -274,13 +274,12 @@ export default function Chat() {
       const formData = new FormData();
       formData.append('message', messageContent);
       formData.append('timestamp', new Date().toISOString());
+      formData.append('user_id', user?.id || '');
+      formData.append('first_name', userProfile?.first_name || '');
+      formData.append('last_name', userProfile?.last_name || '');
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-          'X-User-First-Name': userProfile?.first_name || '',
-          'X-User-Last-Name': userProfile?.last_name || '',
-        },
         body: formData,
       });
 
