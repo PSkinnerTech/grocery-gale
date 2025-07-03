@@ -66,7 +66,12 @@ serve(async (req) => {
           const timeoutId = setTimeout(() => abortController.abort(), 60000) // 60 second timeout
           
           try {
-            const response = await fetch('https://pskinnertech.app.n8n.cloud/webhook-test/gale', {
+            const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL')
+            if (!webhookUrl) {
+              throw new Error('N8N_WEBHOOK_URL is not set in environment variables.')
+            }
+
+            const response = await fetch(webhookUrl, {
               method: 'POST',
               body: webhookFormData, // Send as FormData, not JSON
               signal: abortController.signal

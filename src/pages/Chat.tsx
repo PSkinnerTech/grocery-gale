@@ -101,27 +101,9 @@ export default function Chat() {
   }, [user, navigate]);
 
   const triggerWebhook = async () => {
-    try {
-      const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/gale';
-      
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'no-cors',
-        body: JSON.stringify({
-          user_id: user?.id,
-          timestamp: new Date().toISOString(),
-          triggered_from: 'chat_interface',
-          event: 'user_entered_chat'
-        }),
-      });
-
-      console.log('Webhook triggered successfully');
-    } catch (error) {
-      console.error('Error triggering webhook:', error);
-    }
+    // Webhook trigger removed due to CORS issues
+    // The streaming-chat edge function handles all webhook communication
+    console.log('User entered chat interface');
   };
 
   const loadMealPlans = async () => {
