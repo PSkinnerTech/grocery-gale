@@ -268,11 +268,19 @@ export default function Chat() {
       }
     }
 
-    // Send message to n8n webhook and get response
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      content: '',
+      sender: 'assistant',
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, assistantMessage]);
+
+    // Send message to streaming endpoint
     try {
-      const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/gale';
-      
-      // Fetch dietary preferences for the webhook
+      // Fetch dietary preferences for the request
       let dietaryData = {};
       try {
         const { data: preferences } = await supabase
@@ -300,55 +308,74 @@ export default function Chat() {
       formData.append('adults_count', (dietaryData as any)?.adults_count?.toString() || '');
       formData.append('children_count', (dietaryData as any)?.children_count?.toString() || '');
       
-      const response = await fetch(webhookUrl, {
+      const response = await fetch('https://rxqxvdabwsbjgrcjluhf.functions.supabase.co/streaming-chat', {
         method: 'POST',
         body: formData,
       });
 
-      if (response.ok) {
-        const responseText = await response.text();
-        let messageContent = "I'm here to help you plan your meals and create grocery lists! What would you like to work on today?";
-        
-        try {
-          // Parse the JSON response and extract the output value
-          const parsedResponse = JSON.parse(responseText);
-          if (Array.isArray(parsedResponse) && parsedResponse[0]?.output) {
-            messageContent = parsedResponse[0].output;
-          } else if (parsedResponse?.output) {
-            messageContent = parsedResponse.output;
-          } else {
-            messageContent = responseText;
-          }
-        } catch (error) {
-          // If parsing fails, use the raw response
-          messageContent = responseText;
-        }
-
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: messageContent,
-          sender: 'assistant',
-          timestamp: new Date().toISOString()
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-        
-        // Auto-save conversation after response
-        setTimeout(() => {
-          saveCurrentConversation();
-        }, 1000);
-      } else {
-        throw new Error(`Webhook responded with status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
       }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body reader available');
+      }
+
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'delta' && data.content) {
+                accumulatedContent += data.content;
+                setMessages(prev => prev.map(msg => 
+                  msg.id === assistantMessageId 
+                    ? { ...msg, content: accumulatedContent }
+                    : msg
+                ));
+              } else if (data.type === 'complete') {
+                break;
+              } else if (data.type === 'error') {
+                accumulatedContent = data.content;
+                setMessages(prev => prev.map(msg => 
+                  msg.id === assistantMessageId 
+                    ? { ...msg, content: accumulatedContent }
+                    : msg
+                ));
+                break;
+              }
+            } catch (error) {
+              console.error('Error parsing SSE data:', error);
+            }
+          }
+        }
+      }
+
+      // Auto-save conversation after response
+      setTimeout(() => {
+        saveCurrentConversation();
+      }, 1000);
+
     } catch (error) {
-      console.error('Error with webhook:', error);
-      // Fallback message if webhook fails
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Sorry, I'm having trouble connecting right now. Please try again.",
-        sender: 'assistant',
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
+      console.error('Error with streaming request:', error);
+      // Fallback message if streaming fails
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantMessageId 
+          ? { ...msg, content: "Sorry, I'm having trouble connecting right now. Please try again." }
+          : msg
+      ));
     }
 
     setLoading(false);
