@@ -46,7 +46,7 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
-      // Save dietary preferences
+      // Save dietary preferences with proper upsert
       const { error: prefsError } = await supabase
         .from('dietary_preferences')
         .upsert({
@@ -57,6 +57,8 @@ export default function Onboarding() {
           adults_count: parseInt(formData.adults_count) || null,
           children_count: parseInt(formData.children_count) || null,
           onboarding_completed: true
+        }, {
+          onConflict: 'user_id'
         });
 
       if (prefsError) throw prefsError;
