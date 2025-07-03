@@ -18,6 +18,8 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
     allergies: '',
     dietary_preference: '',
     meals_per_day: '',
@@ -44,7 +46,8 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Save dietary preferences
+      const { error: prefsError } = await supabase
         .from('dietary_preferences')
         .upsert({
           user_id: user.id,
@@ -56,7 +59,18 @@ export default function Onboarding() {
           onboarding_completed: true
         });
 
-      if (error) throw error;
+      if (prefsError) throw prefsError;
+
+      // Update profile with first and last name
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: formData.first_name,
+          last_name: formData.last_name
+        })
+        .eq('user_id', user.id);
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Welcome!",
@@ -82,6 +96,36 @@ export default function Onboarding() {
         return (
           <div className="space-y-4">
             <div className="text-center mb-6">
+              <h2 className="text-2xl font-semibold mb-2">What's your name?</h2>
+              <p className="text-muted-foreground">We'd love to know what to call you!</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">First Name</Label>
+                <Input
+                  id="first_name"
+                  placeholder="Enter your first name"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Last Name</Label>
+                <Input
+                  id="last_name"
+                  placeholder="Enter your last name"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-6">
               <h2 className="text-2xl font-semibold mb-2">Any known allergies?</h2>
               <p className="text-muted-foreground">Help us ensure your meal plans are safe for you</p>
             </div>
@@ -98,7 +142,7 @@ export default function Onboarding() {
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-4">
             <div className="text-center mb-6">
@@ -128,7 +172,7 @@ export default function Onboarding() {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-4">
             <div className="text-center mb-6">
@@ -153,7 +197,7 @@ export default function Onboarding() {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-4">
             <div className="text-center mb-6">
@@ -211,7 +255,7 @@ export default function Onboarding() {
           </CardTitle>
           <div className="flex justify-center mt-4">
             <div className="flex space-x-2">
-              {[1, 2, 3, 4].map((step) => (
+              {[1, 2, 3, 4, 5].map((step) => (
                 <div
                   key={step}
                   className={`w-3 h-3 rounded-full ${
@@ -231,7 +275,7 @@ export default function Onboarding() {
               </Button>
             )}
             <div className="ml-auto">
-              {currentStep < 4 ? (
+              {currentStep < 5 ? (
                 <Button onClick={handleNext}>
                   Next
                 </Button>
