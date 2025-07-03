@@ -21,6 +21,7 @@ serve(async (req) => {
     const mealsPerDay = formData.get('meals_per_day') as string
     const adultsCount = formData.get('adults_count') as string
     const childrenCount = formData.get('children_count') as string
+    const timestamp = formData.get('timestamp') as string
 
     console.log('Received streaming chat request:', {
       userId,
@@ -31,7 +32,8 @@ serve(async (req) => {
       allergies,
       mealsPerDay,
       adultsCount,
-      childrenCount
+      childrenCount,
+      timestamp
     })
 
     // Create a ReadableStream for Server-Sent Events
@@ -41,20 +43,23 @@ serve(async (req) => {
           // Send initial connection message
           controller.enqueue(`data: ${JSON.stringify({ type: 'connected' })}\n\n`)
           
-          // Forward to the original webhook
-          const forwardFormData = new FormData()
-          forwardFormData.append('message', message || '')
-          forwardFormData.append('timestamp', new Date().toISOString())
-          forwardFormData.append('user_id', userId || '')
-          forwardFormData.append('first_name', firstName || '')
-          forwardFormData.append('last_name', lastName || '')
-          forwardFormData.append('dietary_preference', dietaryPreference || '')
-          forwardFormData.append('allergies', allergies || '')
-          forwardFormData.append('meals_per_day', mealsPerDay || '')
-          forwardFormData.append('adults_count', adultsCount || '')
-          forwardFormData.append('children_count', childrenCount || '')
+          // Create the exact FormData that should be sent to the webhook
+          const webhookFormData = new FormData()
+          webhookFormData.append('message', message || '')
+          webhookFormData.append('timestamp', timestamp || new Date().toISOString())
+          webhookFormData.append('user_id', userId || '')
+          webhookFormData.append('first_name', firstName || '')
+          webhookFormData.append('last_name', lastName || '')
+          webhookFormData.append('dietary_preference', dietaryPreference || '')
+          webhookFormData.append('allergies', allergies || '')
+          webhookFormData.append('meals_per_day', mealsPerDay || '')
+          webhookFormData.append('adults_count', adultsCount || '')
+          webhookFormData.append('children_count', childrenCount || '')
           
-          console.log('Forwarding to webhook...')
+          console.log('Sending webhook with form data:')
+          for (const [key, value] of webhookFormData.entries()) {
+            console.log(`  ${key}: ${value}`)
+          }
           
           // Use AbortController for timeout control
           const abortController = new AbortController()
@@ -63,7 +68,7 @@ serve(async (req) => {
           try {
             const response = await fetch('https://pskinnertech.app.n8n.cloud/webhook-test/gale', {
               method: 'POST',
-              body: forwardFormData,
+              body: webhookFormData, // Send as FormData, not JSON
               signal: abortController.signal
             })
             
@@ -92,7 +97,7 @@ serve(async (req) => {
               }
             } catch (parseError) {
               console.log('Failed to parse JSON, using raw response:', parseError)
-              messageContent = responseText
+              messageContent = responseText || "I'm here to help you plan your meals and create grocery lists! What would you like to work on today?"
             }
 
             console.log('Final message content:', messageContent.substring(0, 100) + '...')
