@@ -251,6 +251,22 @@ export default function Chat() {
     setInputMessage('');
     setLoading(true);
 
+    // Record user message timestamp
+    if (user) {
+      try {
+        await supabase
+          .from('user_message_activity')
+          .upsert({
+            user_id: user.id,
+            last_message_timestamp: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+      } catch (error) {
+        console.error('Error recording message timestamp:', error);
+      }
+    }
+
     // Send message to n8n webhook and get response
     try {
       const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook/gale';
