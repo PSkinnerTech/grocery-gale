@@ -31,7 +31,7 @@ const Index = () => {
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Meal Muse
+            Gale
           </CardTitle>
           <CardDescription className="text-lg">
             Your AI-powered grocery shopping companion

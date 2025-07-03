@@ -205,7 +205,7 @@ export default function Chat() {
         <header className="border-b bg-card p-4 flex justify-between items-center">
           <div className="flex-1 text-center">
             <h1 className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Meal Muse
+              Gale
             </h1>
           </div>
           <Sheet>
@@ -246,7 +246,7 @@ export default function Chat() {
           <div className="max-w-2xl mx-auto space-y-4">
             {messages.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-lg font-medium mb-2">Welcome to Meal Muse! 🍽️</div>
+                <div className="text-lg font-medium mb-2">Welcome to Gale! 🍽️</div>
                 <p className="text-muted-foreground">
                   I'm here to help you plan delicious meals and create organized grocery lists.
                 </p>

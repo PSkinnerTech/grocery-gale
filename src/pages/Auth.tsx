@@ -74,7 +74,7 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Meal Muse
+            Gale
           </CardTitle>
           <CardDescription>
             {isSignUp ? 'Create your account to start planning meals' : 'Welcome back! Sign in to continue'}
