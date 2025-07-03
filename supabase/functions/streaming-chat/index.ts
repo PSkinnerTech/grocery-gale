@@ -11,19 +11,19 @@ serve(async (req) => {
   }
 
   try {
-    const formData = await req.formData()
-    const message = formData.get('message') as string
-    const userId = formData.get('user_id') as string
-    const firstName = formData.get('first_name') as string
-    const lastName = formData.get('last_name') as string
-    const email = formData.get('email') as string
-    const dietaryPreference = formData.get('dietary_preference') as string
-    const allergies = formData.get('allergies') as string
-    const mealsPerDay = formData.get('meals_per_day') as string
-    const adultsCount = formData.get('adults_count') as string
-    const childrenCount = formData.get('children_count') as string
-    const timestamp = formData.get('timestamp') as string
-    const sessionId = formData.get('session_id') as string
+    const data = await req.json()
+    const message = data.message as string
+    const userId = data.user_id as string
+    const firstName = data.first_name as string
+    const lastName = data.last_name as string
+    const email = data.email as string
+    const dietaryPreference = data.dietary_preference as string
+    const allergies = data.allergies as string
+    const mealsPerDay = data.meals_per_day as string
+    const adultsCount = data.adults_count as string
+    const childrenCount = data.children_count as string
+    const timestamp = data.timestamp as string
+    const sessionId = data.session_id as string
 
     console.log('Received streaming chat request:', {
       userId,
@@ -40,25 +40,23 @@ serve(async (req) => {
       sessionId
     })
 
-    // Create the exact FormData that should be sent to the webhook
-    const webhookFormData = new FormData()
-    webhookFormData.append('message', message || '')
-    webhookFormData.append('timestamp', timestamp || new Date().toISOString())
-    webhookFormData.append('user_id', userId || '')
-    webhookFormData.append('first_name', firstName || '')
-    webhookFormData.append('last_name', lastName || '')
-    webhookFormData.append('email', email || '')
-    webhookFormData.append('dietary_preference', dietaryPreference || '')
-    webhookFormData.append('allergies', allergies || '')
-    webhookFormData.append('meals_per_day', mealsPerDay || '')
-    webhookFormData.append('adults_count', adultsCount || '')
-    webhookFormData.append('children_count', childrenCount || '')
-    webhookFormData.append('session_id', sessionId || '')
-    
-    console.log('Sending webhook with form data:')
-    for (const [key, value] of webhookFormData.entries()) {
-      console.log(`  ${key}: ${value}`)
+    // Create a JSON payload to send to the webhook
+    const webhookPayload = {
+      message: message || '',
+      timestamp: timestamp || new Date().toISOString(),
+      user_id: userId || '',
+      first_name: firstName || '',
+      last_name: lastName || '',
+      email: email || '',
+      dietary_preference: dietaryPreference || '',
+      allergies: allergies || '',
+      meals_per_day: mealsPerDay || '',
+      adults_count: adultsCount || '',
+      children_count: childrenCount || '',
+      session_id: sessionId || '',
     }
+    
+    console.log('Sending webhook with JSON payload:', webhookPayload)
     
     try {
       const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL')
@@ -68,7 +66,10 @@ serve(async (req) => {
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        body: webhookFormData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
       })
       
       console.log('Webhook response status:', response.status)

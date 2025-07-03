@@ -297,11 +297,15 @@ export default function Chat() {
       
       const response = await fetch('https://rxqxvdabwsbjgrcjluhf.functions.supabase.co/streaming-chat', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(Object.fromEntries(formData)),
       });
 
       if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        throw new Error(errorData.error || `Server responded with status: ${response.status}`);
       }
 
       const result = await response.json();
