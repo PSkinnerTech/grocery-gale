@@ -22,6 +22,7 @@ serve(async (req) => {
     const adultsCount = formData.get('adults_count') as string
     const childrenCount = formData.get('children_count') as string
     const timestamp = formData.get('timestamp') as string
+    const sessionId = formData.get('session_id') as string
 
     console.log('Received streaming chat request:', {
       userId,
@@ -33,7 +34,8 @@ serve(async (req) => {
       mealsPerDay,
       adultsCount,
       childrenCount,
-      timestamp
+      timestamp,
+      sessionId
     })
 
     // Create the exact FormData that should be sent to the webhook
@@ -48,6 +50,7 @@ serve(async (req) => {
     webhookFormData.append('meals_per_day', mealsPerDay || '')
     webhookFormData.append('adults_count', adultsCount || '')
     webhookFormData.append('children_count', childrenCount || '')
+    webhookFormData.append('session_id', sessionId || '')
     
     console.log('Sending webhook with form data:')
     for (const [key, value] of webhookFormData.entries()) {

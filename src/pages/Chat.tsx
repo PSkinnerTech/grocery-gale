@@ -278,6 +278,9 @@ export default function Chat() {
         console.error('Error fetching dietary preferences:', error);
       }
       
+      // Get session information
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const formData = new FormData();
       formData.append('message', messageContent);
       formData.append('timestamp', new Date().toISOString());
@@ -289,6 +292,7 @@ export default function Chat() {
       formData.append('meals_per_day', (dietaryData as any)?.meals_per_day?.toString() || '');
       formData.append('adults_count', (dietaryData as any)?.adults_count?.toString() || '');
       formData.append('children_count', (dietaryData as any)?.children_count?.toString() || '');
+      formData.append('session_id', session?.access_token || '');
       
       const response = await fetch('https://rxqxvdabwsbjgrcjluhf.functions.supabase.co/streaming-chat', {
         method: 'POST',
