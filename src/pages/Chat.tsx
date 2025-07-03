@@ -271,12 +271,33 @@ export default function Chat() {
     try {
       const webhookUrl = 'https://pskinnertech.app.n8n.cloud/webhook-test/gale';
       
+      // Fetch dietary preferences for the webhook
+      let dietaryData = {};
+      try {
+        const { data: preferences } = await supabase
+          .from('dietary_preferences')
+          .select('dietary_preference, allergies, meals_per_day, adults_count, children_count')
+          .eq('user_id', user?.id)
+          .single();
+        
+        if (preferences) {
+          dietaryData = preferences;
+        }
+      } catch (error) {
+        console.error('Error fetching dietary preferences:', error);
+      }
+      
       const formData = new FormData();
       formData.append('message', messageContent);
       formData.append('timestamp', new Date().toISOString());
       formData.append('user_id', user?.id || '');
       formData.append('first_name', userProfile?.first_name || '');
       formData.append('last_name', userProfile?.last_name || '');
+      formData.append('dietary_preference', (dietaryData as any)?.dietary_preference || '');
+      formData.append('allergies', (dietaryData as any)?.allergies || '');
+      formData.append('meals_per_day', (dietaryData as any)?.meals_per_day?.toString() || '');
+      formData.append('adults_count', (dietaryData as any)?.adults_count?.toString() || '');
+      formData.append('children_count', (dietaryData as any)?.children_count?.toString() || '');
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
