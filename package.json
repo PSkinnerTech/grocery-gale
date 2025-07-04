@@ -6,6 +6,7 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
+    "dev:browser": "vite --config vite.config.browser.ts",
     "build": "vite build && electron-builder",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
